@@ -1,7 +1,7 @@
 import argparse
 import logging
 import time
-
+import tensorflow as tf
 import cv2
 import numpy as np
 
@@ -35,10 +35,12 @@ if __name__ == '__main__':
 
     logger.debug('initialization %s : %s' % (args.model, get_graph_path(args.model)))
     w, h = model_wh(args.resize)
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.3, allow_growth=True)
+    config = tf.ConfigProto(gpu_options=gpu_options)
     if w > 0 and h > 0:
-        e = TfPoseEstimator(get_graph_path(args.model), target_size=(w, h))
+        e = TfPoseEstimator(get_graph_path(args.model), target_size=(w, h), tf_config=config)
     else:
-        e = TfPoseEstimator(get_graph_path(args.model), target_size=(432, 368))
+        e = TfPoseEstimator(get_graph_path(args.model), target_size=(432, 368), tf_config=config)
     logger.debug('cam read+')
     cam = cv2.VideoCapture(args.camera)
     ret_val, image = cam.read()
