@@ -5,16 +5,14 @@ import glob
 import ast
 import os
 import dill
-
+import sys
+sys.path.append('/home/nvidia/tf-pose-estimation/tf_pose')
 import common
 import cv2
 import numpy as np
 from estimator import TfPoseEstimator
 from networks import get_graph_path, model_wh
-
-from lifting.prob_model import Prob3dPose
-from lifting.draw import plot_pose
-
+import tensorflow as tf
 logger = logging.getLogger('TfPoseEstimator')
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
@@ -32,9 +30,10 @@ if __name__ == '__main__':
     parser.add_argument('--scales', type=str, default='[None]', help='for multiple scales, eg. [1.0, (1.1, 0.05)]')
     args = parser.parse_args()
     scales = ast.literal_eval(args.scales)
-
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.2, allow_growth=True)
+    config = tf.ConfigProto(gpu_options=gpu_options)
     w, h = model_wh(args.resolution)
-    e = TfPoseEstimator(get_graph_path(args.model), target_size=(w, h))
+    e = TfPoseEstimator(get_graph_path(args.model), target_size=(w, h), tf_config=config)
 
     files_grabbed = glob.glob(os.path.join(args.folder, '*.jpg'))
     all_humans = dict()
@@ -42,7 +41,7 @@ if __name__ == '__main__':
         # estimate human poses from a single image !
         image = common.read_imgfile(file, None, None)
         t = time.time()
-        humans = e.inference(image, scales=scales)
+        humans = e.inference(image)
         elapsed = time.time() - t
 
         logger.info('inference image #%d: %s in %.4f seconds.' % (i, file, elapsed))
