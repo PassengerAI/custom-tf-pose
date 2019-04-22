@@ -111,7 +111,7 @@ if __name__ == "__main__":
                              target_size=(
         w, h), tf_config=config)
 	time.sleep(1)
-	object_detector = InferenceEngine('/home/nvidia/ssd_2017.engine')
+	object_detector = InferenceEngine('/home/nvidia/ssd_new.engine')
 
 	# TensorRT object detection
 	for img in images:

@@ -4,7 +4,7 @@ import ctypes
 
 TRT_LOGGER = trt.Logger(trt.Logger.INFO)
 if __name__ == "__main__":
-	model_file = '/home/nvidia/output.uff'
+	model_file = '/home/nvidia/output_new.uff'
 	try:
 		ctypes.CDLL('/usr/src/tensorrt/samples/python/uff_ssd/build/libflattenconcat.so')
 	except:
@@ -24,5 +24,5 @@ if __name__ == "__main__":
 		builder.max_batch_size = 1
 		builder.max_workspace_size = 1 << 30
 		engine = builder.build_cuda_engine(network)
-	with open('/home/nvidia/ssd.engine', 'wb') as f:
+	with open('/home/nvidia/ssd_new.engine', 'wb') as f:
 		f.write(engine.serialize())
