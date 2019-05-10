@@ -6,6 +6,9 @@ import numpy as np
 import sys
 from InferenceEngine import InferenceEngine
 import tensorflow as tf
+
+import tf_pose.datatypes
+
 sys.path.append('/home/nvidia/tf-pose-estimation')
 from tf_pose.tensblur.smoother import Smoother
 from tf_pose.estimator import PoseEstimator
@@ -132,7 +135,7 @@ class TfPoseEstimator:
         centers = {}
         for human in humans:
             # draw point
-            for i in range(common.CocoPart.Background.value):
+            for i in range(tf_pose.datatypes.CocoPart.Background.value):
                 if i not in human.body_parts.keys():
                     continue
 
