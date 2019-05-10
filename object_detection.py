@@ -5,7 +5,7 @@ import time
 import tensorflow as tf
 from PIL import Image
 import numpy as np
-sys.path.append('/home/nvidia/tf-pose-estimation')
+sys.path.append('/home/nvidia/custom-tf-pose')
 from InferenceEngine import InferenceEngine
 
 from tf_pose.estimator import TfPoseEstimator
