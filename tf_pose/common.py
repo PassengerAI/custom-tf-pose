@@ -3,7 +3,7 @@ from enum import Enum
 import tensorflow as tf
 import cv2
 
-from tf_pose.datatypes import CocoPart
+from coco_datatypes.common import CocoPart
 
 regularizer_conv = 0.004
 regularizer_dsconv = 0.0004

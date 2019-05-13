@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 from tensorpack.dataflow.imgaug.geometry import RotationAndCropValid
 
-from tf_pose.datatypes import CocoPart
+from coco_datatypes.common import CocoPart
 
 _network_w = 368
 _network_h = 368

@@ -7,7 +7,7 @@ import sys
 from InferenceEngine import InferenceEngine
 import tensorflow as tf
 
-import tf_pose.datatypes
+import coco_datatypes.common
 
 sys.path.append('/home/nvidia/tf-pose-estimation')
 from tf_pose.tensblur.smoother import Smoother
@@ -135,7 +135,7 @@ class TfPoseEstimator:
         centers = {}
         for human in humans:
             # draw point
-            for i in range(tf_pose.datatypes.CocoPart.Background.value):
+            for i in range(coco_datatypes.common.CocoPart.Background.value):
                 if i not in human.body_parts.keys():
                     continue
 
