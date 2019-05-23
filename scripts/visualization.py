@@ -7,7 +7,7 @@ from cv_bridge import CvBridge, CvBridgeError
 
 from tfpose_ros.msg import Persons, Person, BodyPartElm
 from tf_pose.estimator import TfPoseEstimator
-from coco_datatypes.common import Human, BodyPart
+from paitypes.estimation.pose import Human, BodyPart
 
 
 class VideoFrames:

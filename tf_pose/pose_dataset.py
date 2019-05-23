@@ -1,4 +1,6 @@
 import logging
+from builtins import ImportError
+
 import math
 import multiprocessing
 import struct

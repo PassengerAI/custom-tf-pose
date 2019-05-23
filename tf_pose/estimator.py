@@ -8,7 +8,7 @@ import tensorflow as tf
 import time
 
 from tf_pose import common
-from coco_datatypes.common import Human, BodyPart
+from paitypes.estimation.pose import Human, BodyPart
 from tf_pose.tensblur.smoother import Smoother
 
 try:
@@ -177,7 +177,7 @@ class TfPoseEstimator:
         centers = {}
         for human in humans:
             # draw point
-            for i in range(coco_datatypes.common.CocoPart.Background.value):
+            for i in range(paitypes.estimation.pose.CocoPart.Background.value):
                 if i not in human.body_parts.keys():
                     continue
 
