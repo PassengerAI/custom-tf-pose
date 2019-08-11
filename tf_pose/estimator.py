@@ -100,7 +100,7 @@ class TfPoseEstimator:
         self.tensor_pafMat_up = tf.image.resize_area(
             self.tensor_output[:, :, :, 19:], self.upsample_size,
             align_corners=False, name='upsample_pafmat')
-        smoother = Smoother({'data': self.tensor_heatMat_up}, 25, 3.0)
+        smoother = Smoother({'data': self.tensor_heatMat_up}, 25, 3.0, 19)
         gaussian_heatMat = smoother.get_output()
 
         max_pooled_in_tensor = tf.nn.pool(gaussian_heatMat,
