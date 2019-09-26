@@ -72,45 +72,42 @@ class TfPoseEstimator:
 
         # load graph
         logger.info('loading graph from %s(default size=%dx%d)' % (
-        graph_path, target_size[0], target_size[1]))
+            graph_path, target_size[0], target_size[1]))
         with tf.gfile.GFile(graph_path, 'rb') as f:
             graph_def = tf.GraphDef()
             graph_def.ParseFromString(f.read())
 
-        self.graph = tf.get_default_graph()
-        tf.import_graph_def(graph_def, name='TfPoseEstimator')
+        graph = tf.Graph()
         self.persistent_sess = tf.Session(graph=self.graph, config=tf_config)
 
-        # for op in self.graph.get_operations():
-        #     print(op.name)
-        # for ts in [n.name for n in tf.get_default_graph().as_graph_def().node]:
-        #     print(ts)
+        with graph.as_default():
+            tf.import_graph_def(graph_def, name='TfPoseEstimator')
 
-        self.tensor_image = self.graph.get_tensor_by_name(
-            'TfPoseEstimator/image:0')
-        self.tensor_output = self.graph.get_tensor_by_name(
-            'TfPoseEstimator/Openpose/concat_stage7:0')
-        self.tensor_heatMat = self.tensor_output[:, :, :, :19]
-        self.tensor_pafMat = self.tensor_output[:, :, :, 19:]
-        self.upsample_size = tf.placeholder(dtype=tf.int32, shape=(2,),
-                                            name='upsample_size')
-        self.tensor_heatMat_up = tf.image.resize_area(
-            self.tensor_output[:, :, :, :19], self.upsample_size,
-            align_corners=False, name='upsample_heatmat')
-        self.tensor_pafMat_up = tf.image.resize_area(
-            self.tensor_output[:, :, :, 19:], self.upsample_size,
-            align_corners=False, name='upsample_pafmat')
-        smoother = Smoother({'data': self.tensor_heatMat_up}, 25, 3.0, 19)
-        gaussian_heatMat = smoother.get_output()
+            self.tensor_image = self.graph.get_tensor_by_name(
+                'TfPoseEstimator/image:0')
+            self.tensor_output = self.graph.get_tensor_by_name(
+                'TfPoseEstimator/Openpose/concat_stage7:0')
+            self.tensor_heatMat = self.tensor_output[:, :, :, :19]
+            self.tensor_pafMat = self.tensor_output[:, :, :, 19:]
+            self.upsample_size = tf.placeholder(dtype=tf.int32, shape=(2,),
+                                                name='upsample_size')
+            self.tensor_heatMat_up = tf.image.resize_area(
+                self.tensor_output[:, :, :, :19], self.upsample_size,
+                align_corners=False, name='upsample_heatmat')
+            self.tensor_pafMat_up = tf.image.resize_area(
+                self.tensor_output[:, :, :, 19:], self.upsample_size,
+                align_corners=False, name='upsample_pafmat')
+            smoother = Smoother({'data': self.tensor_heatMat_up}, 25, 3.0, 19)
+            gaussian_heatMat = smoother.get_output()
 
-        max_pooled_in_tensor = tf.nn.pool(gaussian_heatMat,
-                                          window_shape=(3, 3),
-                                          pooling_type='MAX', padding='SAME')
-        self.tensor_peaks = tf.where(
-            tf.equal(gaussian_heatMat, max_pooled_in_tensor), gaussian_heatMat,
-            tf.zeros_like(gaussian_heatMat))
+            max_pooled_in_tensor = tf.nn.pool(gaussian_heatMat,
+                                              window_shape=(3, 3),
+                                              pooling_type='MAX', padding='SAME')
+            self.tensor_peaks = tf.where(
+                tf.equal(gaussian_heatMat, max_pooled_in_tensor), gaussian_heatMat,
+                tf.zeros_like(gaussian_heatMat))
 
-        self.heatMat = self.pafMat = None
+            self.heatMat = self.pafMat = None
 
         # warm-up
         self.persistent_sess.run(tf.variables_initializer(
@@ -315,7 +312,7 @@ class TfPoseEstimator:
                                dtype=np.uint8)
 
             copy_x, copy_y = (target_w - cropped_w) // 2, (
-                        target_h - cropped_h) // 2
+                    target_h - cropped_h) // 2
             npblank[copy_y:copy_y + cropped_h,
             copy_x:copy_x + cropped_w] = cropped
         else:
@@ -339,7 +336,7 @@ class TfPoseEstimator:
             pass
 
         logger.debug('inference+ original shape=%dx%d' % (
-        npimg.shape[1], npimg.shape[0]))
+            npimg.shape[1], npimg.shape[0]))
         img = npimg
         if resize_to_default:
             img = self._get_scaled_img(npimg, None)[0][0]
