@@ -77,11 +77,12 @@ class TfPoseEstimator:
             graph_def = tf.GraphDef()
             graph_def.ParseFromString(f.read())
 
-        graph = tf.Graph()
-        self.persistent_sess = tf.Session(graph=self.graph, config=tf_config)
+        self.graph = tf.Graph()
 
-        with graph.as_default():
+        with self.graph.as_default():
             tf.import_graph_def(graph_def, name='TfPoseEstimator')
+            self.persistent_sess = tf.Session(graph=self.graph,
+                                              config=tf_config)
 
             self.tensor_image = self.graph.get_tensor_by_name(
                 'TfPoseEstimator/image:0')
@@ -94,6 +95,7 @@ class TfPoseEstimator:
             self.tensor_heatMat_up = tf.image.resize_area(
                 self.tensor_output[:, :, :, :19], self.upsample_size,
                 align_corners=False, name='upsample_heatmat')
+
             self.tensor_pafMat_up = tf.image.resize_area(
                 self.tensor_output[:, :, :, 19:], self.upsample_size,
                 align_corners=False, name='upsample_pafmat')
@@ -109,41 +111,41 @@ class TfPoseEstimator:
 
             self.heatMat = self.pafMat = None
 
-        # warm-up
-        self.persistent_sess.run(tf.variables_initializer(
-            [v for v in tf.global_variables() if
-             v.name.split(':')[0] in [x.decode('utf-8') for x in
-                                      self.persistent_sess.run(
-                                          tf.report_uninitialized_variables())]
-             ])
-        )
-        self.persistent_sess.run(
-            [self.tensor_peaks, self.tensor_heatMat_up, self.tensor_pafMat_up],
-            feed_dict={
-                self.tensor_image: [
-                    np.ndarray(shape=(target_size[1], target_size[0], 3),
-                               dtype=np.float32)],
-                self.upsample_size: [target_size[1], target_size[0]]
-            }
-        )
-        self.persistent_sess.run(
-            [self.tensor_peaks, self.tensor_heatMat_up, self.tensor_pafMat_up],
-            feed_dict={
-                self.tensor_image: [
-                    np.ndarray(shape=(target_size[1], target_size[0], 3),
-                               dtype=np.float32)],
-                self.upsample_size: [target_size[1] // 2, target_size[0] // 2]
-            }
-        )
-        self.persistent_sess.run(
-            [self.tensor_peaks, self.tensor_heatMat_up, self.tensor_pafMat_up],
-            feed_dict={
-                self.tensor_image: [
-                    np.ndarray(shape=(target_size[1], target_size[0], 3),
-                               dtype=np.float32)],
-                self.upsample_size: [target_size[1] // 4, target_size[0] // 4]
-            }
-        )
+            # warm-up
+            self.persistent_sess.run(tf.variables_initializer(
+                [v for v in tf.global_variables() if
+                 v.name.split(':')[0] in [x.decode('utf-8') for x in
+                                          self.persistent_sess.run(
+                                              tf.report_uninitialized_variables())]
+                 ])
+            )
+            self.persistent_sess.run(
+                [self.tensor_peaks, self.tensor_heatMat_up, self.tensor_pafMat_up],
+                feed_dict={
+                    self.tensor_image: [
+                        np.ndarray(shape=(target_size[1], target_size[0], 3),
+                                   dtype=np.float32)],
+                    self.upsample_size: [target_size[1], target_size[0]]
+                }
+            )
+            self.persistent_sess.run(
+                [self.tensor_peaks, self.tensor_heatMat_up, self.tensor_pafMat_up],
+                feed_dict={
+                    self.tensor_image: [
+                        np.ndarray(shape=(target_size[1], target_size[0], 3),
+                                   dtype=np.float32)],
+                    self.upsample_size: [target_size[1] // 2, target_size[0] // 2]
+                }
+            )
+            self.persistent_sess.run(
+                [self.tensor_peaks, self.tensor_heatMat_up, self.tensor_pafMat_up],
+                feed_dict={
+                    self.tensor_image: [
+                        np.ndarray(shape=(target_size[1], target_size[0], 3),
+                                   dtype=np.float32)],
+                    self.upsample_size: [target_size[1] // 4, target_size[0] // 4]
+                }
+            )
 
         # logs
         if self.tensor_image.dtype == tf.quint8:
