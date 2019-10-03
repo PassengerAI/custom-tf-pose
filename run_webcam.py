@@ -1,7 +1,7 @@
 import argparse
 import logging
 import time
-import tensorflow as tf
+
 import cv2
 import numpy as np
 
@@ -18,6 +18,9 @@ logger.addHandler(ch)
 
 fps_time = 0
 
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='tf-pose-estimation realtime webcam')
@@ -31,16 +34,17 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='mobilenet_thin', help='cmu / mobilenet_thin / mobilenet_v2_large / mobilenet_v2_small')
     parser.add_argument('--show-process', type=bool, default=False,
                         help='for debug purpose, if enabled, speed for inference is dropped.')
+    
+    parser.add_argument('--tensorrt', type=str, default="False",
+                        help='for tensorrt process.')
     args = parser.parse_args()
 
     logger.debug('initialization %s : %s' % (args.model, get_graph_path(args.model)))
     w, h = model_wh(args.resize)
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.3, allow_growth=True)
-    config = tf.ConfigProto(gpu_options=gpu_options)
     if w > 0 and h > 0:
-        e = TfPoseEstimator(get_graph_path(args.model), target_size=(w, h), tf_config=config)
+        e = TfPoseEstimator(get_graph_path(args.model), target_size=(w, h), trt_bool=str2bool(args.tensorrt))
     else:
-        e = TfPoseEstimator(get_graph_path(args.model), target_size=(432, 368), tf_config=config)
+        e = TfPoseEstimator(get_graph_path(args.model), target_size=(432, 368), trt_bool=str2bool(args.tensorrt))
     logger.debug('cam read+')
     cam = cv2.VideoCapture(args.camera)
     ret_val, image = cam.read()

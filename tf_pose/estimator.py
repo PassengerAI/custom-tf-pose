@@ -1,4 +1,5 @@
 import logging
+import math
 
 import slidingwindow as sw
 
@@ -10,6 +11,7 @@ import time
 from tf_pose import common
 from paitypes.estimation.pose import Human, BodyPart
 from tf_pose.tensblur.smoother import Smoother
+import tensorflow.contrib.tensorrt as trt
 
 try:
     from tf_pose.pafprocess import pafprocess
@@ -28,6 +30,17 @@ formatter = logging.Formatter(
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 logger.setLevel(logging.INFO)
+
+
+def _round(v):
+    return int(round(v))
+
+
+def _include_part(part_list, part_idx):
+    for part in part_list:
+        if part_idx == part.part_idx:
+            return True, part
+    return False, None
 
 
 class PoseEstimator:
@@ -67,7 +80,8 @@ class PoseEstimator:
 class TfPoseEstimator:
     # TODO : multi-scale
 
-    def __init__(self, graph_path, target_size=(320, 240), tf_config=None):
+    def __init__(self, graph_path, target_size=(320, 240), tf_config=None,
+                 trt_bool=False):
         self.target_size = target_size
 
         # load graph
@@ -77,14 +91,27 @@ class TfPoseEstimator:
             graph_def = tf.GraphDef()
             graph_def.ParseFromString(f.read())
 
+        if trt_bool is True:
+            output_nodes = ["Openpose/concat_stage7"]
+            graph_def = trt.create_inference_graph(
+                graph_def,
+                output_nodes,
+                max_batch_size=1,
+                max_workspace_size_bytes=1 << 20,
+                precision_mode="FP16",
+                # precision_mode="INT8",
+                minimum_segment_size=3,
+                is_dynamic_op=True,
+                maximum_cached_engines=int(1e3),
+                use_calibration=True,
+            )
+
         self.graph = tf.get_default_graph()
         tf.import_graph_def(graph_def, name='TfPoseEstimator')
         self.persistent_sess = tf.Session(graph=self.graph, config=tf_config)
 
-        # for op in self.graph.get_operations():
-        #     print(op.name)
-        # for ts in [n.name for n in tf.get_default_graph().as_graph_def().node]:
-        #     print(ts)
+        for ts in [n.name for n in tf.get_default_graph().as_graph_def().node]:
+            print(ts)
 
         self.tensor_image = self.graph.get_tensor_by_name(
             'TfPoseEstimator/image:0')
@@ -100,7 +127,10 @@ class TfPoseEstimator:
         self.tensor_pafMat_up = tf.image.resize_area(
             self.tensor_output[:, :, :, 19:], self.upsample_size,
             align_corners=False, name='upsample_pafmat')
-        smoother = Smoother({'data': self.tensor_heatMat_up}, 25, 3.0, 19)
+        if trt_bool is True:
+            smoother = Smoother({'data': self.tensor_heatMat_up}, 25, 3.0, 19)
+        else:
+            smoother = Smoother({'data': self.tensor_heatMat_up}, 25, 3.0)
         gaussian_heatMat = smoother.get_output()
 
         max_pooled_in_tensor = tf.nn.pool(gaussian_heatMat,
@@ -177,7 +207,7 @@ class TfPoseEstimator:
         centers = {}
         for human in humans:
             # draw point
-            for i in range(paitypes.estimation.pose.CocoPart.Background.value):
+            for i in range(common.CocoPart.Background.value):
                 if i not in human.body_parts.keys():
                     continue
 
@@ -357,6 +387,7 @@ class TfPoseEstimator:
 
         t = time.time()
         humans = PoseEstimator.estimate_paf(peaks, self.heatMat, self.pafMat)
+        logger.debug('estimate time=%.5f' % (time.time() - t))
         return humans
 
 

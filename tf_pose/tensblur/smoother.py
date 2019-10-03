@@ -61,15 +61,14 @@ class Smoother(object):
         return self
 
     def gauss_kernel(self, kernlen=21, nsig=3, channels=1):
-        interval = (2 * nsig + 1.) / (kernlen)
-        x = np.linspace(-nsig - interval / 2., nsig + interval / 2.,
-                        kernlen + 1)
+        interval = (2*nsig+1.)/(kernlen)
+        x = np.linspace(-nsig-interval/2., nsig+interval/2., kernlen+1)
         kern1d = np.diff(st.norm.cdf(x))
         kernel_raw = np.sqrt(np.outer(kern1d, kern1d))
-        kernel = kernel_raw / kernel_raw.sum()
-        out_filter = np.array(kernel, dtype=np.float32)
+        kernel = kernel_raw/kernel_raw.sum()
+        out_filter = np.array(kernel, dtype = np.float32)
         out_filter = out_filter.reshape((kernlen, kernlen, 1, 1))
-        out_filter = np.repeat(out_filter, channels, axis=2)
+        out_filter = np.repeat(out_filter, channels, axis = 2)
         return out_filter
 
     def make_gauss_var(self, name, size, sigma, c_i):
@@ -89,14 +88,12 @@ class Smoother(object):
              padding='SAME'):
         # Get the number of channels in the input
         if self.heat_map_size != 0:
-            c_i = self.heat_map_size
+            c_i = self.heat_map_size 
         else:
             c_i = input.get_shape().as_list()[3]
         # Convolution for a given input and kernel
-        convolve = lambda i, k: tf.nn.depthwise_conv2d(i, k, [1, 1, 1, 1],
-                                                       padding=padding)
+        convolve = lambda i, k: tf.nn.depthwise_conv2d(i, k, [1, 1, 1, 1], padding=padding)
         with tf.variable_scope(name) as scope:
-            kernel = self.make_gauss_var('gauss_weight', self.filter_size,
-                                         self.sigma, c_i)
+            kernel = self.make_gauss_var('gauss_weight', self.filter_size, self.sigma, c_i)
             output = convolve(input, kernel)
         return output
